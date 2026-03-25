@@ -160,11 +160,16 @@ defmodule SymphonyElixir.Claude.AppServer do
     SymphonyElixir.SSH.start_port(worker_host, remote_command, line: @port_line_bytes)
   end
 
-  defp build_claude_command(_session_id, _turn_count) do
-    # Always use a fresh session. Multi-turn via --resume is unreliable in --print mode.
-    # The agent_runner passes continuation guidance as the prompt for subsequent turns,
-    # so context is maintained via the prompt, not session history.
-    Config.settings!().codex.command
+  defp build_claude_command(_session_id, turn_count) do
+    base_command = Config.settings!().codex.command
+
+    if turn_count == 0 do
+      base_command
+    else
+      # Use --continue to resume the last conversation in the workspace directory.
+      # This gives Claude full context from previous turns.
+      base_command <> " --continue"
+    end
   end
 
   defp write_prompt_file(workspace, session_id, turn_count, prompt) do
