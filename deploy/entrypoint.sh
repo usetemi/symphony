@@ -30,6 +30,19 @@ git config --global user.email "symphony@usetemi.com"
 # --- Ensure workspace root exists ---
 mkdir -p /data/workspaces
 
+# --- Write Linear MCP config for Claude Code ---
+cat > /home/symphony/mcp-linear.json <<MCPEOF
+{
+  "mcpServers": {
+    "linear": {
+      "type": "http",
+      "url": "https://mcp.linear.app/mcp"
+    }
+  }
+}
+MCPEOF
+echo "[symphony] Linear MCP config written"
+
 # --- Claude auth check ---
 if [ ! -d /data/claude-auth ] || [ -z "$(ls -A /data/claude-auth 2>/dev/null)" ]; then
     echo "[symphony] WARNING: No Claude auth found in /data/claude-auth/"

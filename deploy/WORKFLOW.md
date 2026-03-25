@@ -30,7 +30,7 @@ agent:
   max_concurrent_agents: 3
   max_turns: 20
 codex:
-  command: claude --print --dangerously-skip-permissions --output-format stream-json --verbose --model claude-sonnet-4-6
+  command: claude --print --dangerously-skip-permissions --output-format stream-json --verbose --mcp-config /home/symphony/mcp-linear.json --model claude-sonnet-4-6
 server:
   port: 4000
   host: "0.0.0.0"
