@@ -1,7 +1,7 @@
 # Symphony Orchestrator — Fly.io deployment
 # Polls Linear for issues, launches Claude Code per issue, delivers PRs.
 
-app = "symphony-temi"
+app = "usetemi-symphony"
 primary_region = "dfw"
 
 [build]
