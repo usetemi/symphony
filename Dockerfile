@@ -1,10 +1,12 @@
 # Symphony Orchestrator — Claude Code adapter
 # Multi-stage build: compile escript, then assemble runtime with Claude Code CLI
 
+ARG ELIXIR_IMAGE=hexpm/elixir:1.19.5-erlang-26.2.5.2-debian-bookworm-20260316-slim
+
 # =============================================================================
 # Stage 1: Build the Elixir escript
 # =============================================================================
-FROM hexpm/elixir:1.19.3-erlang-28.0.1-debian-bookworm-20250428-slim AS build
+FROM ${ELIXIR_IMAGE} AS build
 
 RUN apt-get update -y && \
     apt-get install -y --no-install-recommends build-essential git && \
@@ -12,25 +14,22 @@ RUN apt-get update -y && \
 
 WORKDIR /app
 
-# Install hex and rebar
 RUN mix local.hex --force && mix local.rebar --force
 
 ENV MIX_ENV=prod
 
-# Cache deps
 COPY elixir/mix.exs elixir/mix.lock ./
 RUN mix deps.get --only prod && mix deps.compile
 
-# Build escript
 COPY elixir/ ./
 RUN mix escript.build
 
 # =============================================================================
 # Stage 2: Runtime image
+# Uses the same Elixir base (includes Erlang) + adds Node.js and Claude Code
 # =============================================================================
-FROM debian:bookworm-slim AS runtime
+FROM ${ELIXIR_IMAGE} AS runtime
 
-# Install Erlang runtime, Node.js 24, git, SSH, and other tools
 RUN apt-get update -y && \
     apt-get install -y --no-install-recommends \
       ca-certificates \
@@ -38,15 +37,9 @@ RUN apt-get update -y && \
       git \
       openssh-client \
       gnupg && \
-    # Erlang runtime
-    curl -fsSL https://binaries2.erlang-solutions.com/debian/erlang_solutions.asc | gpg --dearmor -o /usr/share/keyrings/erlang-archive-keyring.gpg && \
-    echo "deb [signed-by=/usr/share/keyrings/erlang-archive-keyring.gpg] https://binaries2.erlang-solutions.com/debian bookworm contrib" > /etc/apt/sources.list.d/erlang.list && \
-    apt-get update -y && \
-    apt-get install -y --no-install-recommends esl-erlang && \
-    # Node.js 24.x
+    # Node.js 24.x (required for Claude Code CLI and npm install in workspace hooks)
     curl -fsSL https://deb.nodesource.com/setup_24.x | bash - && \
     apt-get install -y --no-install-recommends nodejs && \
-    # Cleanup
     rm -rf /var/lib/apt/lists/*
 
 # Install Claude Code CLI globally
@@ -59,7 +52,7 @@ RUN useradd -m -s /bin/bash symphony
 COPY --from=build /app/bin/symphony /usr/local/bin/symphony
 RUN chmod +x /usr/local/bin/symphony
 
-# Copy entrypoint (must be before USER switch for /usr/local/bin write access)
+# Copy entrypoint
 COPY deploy/entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh
 
@@ -74,7 +67,7 @@ WORKDIR /home/symphony
 # Symlink Claude auth to persistent volume
 RUN ln -s /data/claude-auth /home/symphony/.claude
 
-# SSH config for GitHub (pre-populate known_hosts)
+# SSH known_hosts for GitHub (fallback if using SSH instead of token)
 RUN mkdir -p /home/symphony/.ssh && \
     ssh-keyscan github.com >> /home/symphony/.ssh/known_hosts 2>/dev/null
 
