@@ -42,8 +42,8 @@ RUN apt-get update -y && \
     apt-get install -y --no-install-recommends nodejs && \
     rm -rf /var/lib/apt/lists/*
 
-# Install Claude Code CLI globally
-RUN npm install -g @anthropic-ai/claude-code
+# Install Claude Code CLI and Linear CLI globally
+RUN npm install -g @anthropic-ai/claude-code @kyaukyuai/linear-cli
 
 # Create non-root user
 RUN useradd -m -s /bin/bash symphony

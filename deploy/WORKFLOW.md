@@ -30,7 +30,7 @@ agent:
   max_concurrent_agents: 3
   max_turns: 20
 codex:
-  command: claude --print --dangerously-skip-permissions --output-format stream-json --verbose --mcp-config /home/symphony/mcp-linear.json --model claude-sonnet-4-6
+  command: claude --print --dangerously-skip-permissions --output-format stream-json --verbose --model claude-sonnet-4-6
 server:
   port: 4000
   host: "0.0.0.0"
@@ -80,17 +80,31 @@ Do not touch `apps/temi-agent/` or any files outside this scope.
 
 Work only in the provided repository copy. Do not touch any other path.
 
-## Linear MCP tools
+## Linear CLI
 
-Use the configured Linear MCP tools for all issue tracker operations:
+Use the `linear` CLI (already installed and authenticated) for all issue tracker operations. Run commands via Bash. All commands output JSON with `--json`.
 
-- `mcp__plugin_linear_linear__get_issue` -- fetch issue details
-- `mcp__plugin_linear_linear__save_issue` -- update issue state, labels, attachments
-- `mcp__plugin_linear_linear__save_comment` -- create/update workpad comments
-- `mcp__plugin_linear_linear__list_comments` -- read existing comments
-- `mcp__plugin_linear_linear__create_attachment` -- upload screenshots/recordings to issue
+```bash
+# Fetch issue details
+linear issue view USE-172 --json
 
-If Linear MCP tools are not available, stop and report the blocker in the workpad.
+# Update issue state
+linear issue update USE-172 --state "In Progress"
+
+# List comments on an issue
+linear issue comment list USE-172 --json
+
+# Create/update a comment
+linear issue comment create USE-172 --body "## Claude Workpad\n..."
+
+# Add a label
+linear issue update USE-172 --label symphony
+
+# Raw GraphQL for anything not covered above
+linear api '{ issue(id: "...") { title state { name } } }'
+```
+
+If the `linear` CLI is not available, stop and report the blocker in the workpad.
 
 ## Status map
 
@@ -330,36 +344,23 @@ Save screenshots and video recordings as evidence of preview testing. Upload dir
 
 **Screenshots:**
 
-Take screenshots at key states during preview testing. Upload each to the Linear issue using the attachment API:
-
-```
-mcp__plugin_linear_linear__create_attachment(
-  issue: "{{ issue.identifier }}",
-  base64Content: <base64-encoded-png>,
-  filename: "preview-<description>.png",
-  contentType: "image/png",
-  title: "Preview: <description>"
-)
-```
-
-**Video recordings:**
-
-Capture session recordings via Playwright MCP `saveVideo`. Convert `.webm` to GIF for smaller file size:
+Take screenshots at key states during preview testing. Upload to the Linear issue using the GraphQL API:
 
 ```bash
-ffmpeg -i recording.webm -vf "fps=10,scale=800:-1:flags=lanczos,split[s0][s1];[s0]palettegen[p];[s1][p]paletteuse" recording.gif
+# Upload a screenshot to the Linear issue
+linear api 'mutation($issueId: String!, $url: String!, $title: String!) {
+  attachmentCreate(input: { issueId: $issueId, url: $url, title: $title }) {
+    success
+  }
+}' --variable issueId="<issue-uuid>" --variable url="<public-url>" --variable title="Preview: <description>"
 ```
 
-Upload the GIF to the Linear issue:
+For image hosting, use GitHub draft releases:
 
-```
-mcp__plugin_linear_linear__create_attachment(
-  issue: "{{ issue.identifier }}",
-  base64Content: <base64-encoded-gif>,
-  filename: "preview-recording.gif",
-  contentType: "image/gif",
-  title: "Preview recording: <flow-name>"
-)
+```bash
+gh release create preview-assets --title "Preview assets" --notes "" --draft --repo usetemi/temi
+gh release upload preview-assets screenshot.png --repo usetemi/temi
+# Get the URL from: gh release view preview-assets --json assets --jq '.assets[0].url' --repo usetemi/temi
 ```
 
 Reference uploaded assets in the workpad comment so reviewers know what was tested.

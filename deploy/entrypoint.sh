@@ -30,9 +30,11 @@ git config --global user.email "symphony@usetemi.com"
 # --- Ensure workspace root exists ---
 mkdir -p /data/workspaces
 
-# --- Install Linear MCP plugin for Claude Code ---
-claude plugin install linear@claude-plugins-official 2>/dev/null || echo "[symphony] Linear plugin already installed or install failed"
-echo "[symphony] Linear MCP plugin configured"
+# --- Configure Linear CLI auth ---
+if [ -n "${LINEAR_API_KEY:-}" ]; then
+    echo "[symphony] Configuring Linear CLI auth..."
+    linear auth login --key "${LINEAR_API_KEY}" --plaintext 2>/dev/null || true
+fi
 
 # --- Claude auth check ---
 if [ ! -d /data/claude-auth ] || [ -z "$(ls -A /data/claude-auth 2>/dev/null)" ]; then
