@@ -28,7 +28,7 @@ hooks:
     cd apps/usetemi && npm run verify
 agent:
   max_concurrent_agents: 3
-  max_turns: 10
+  max_turns: 1
 codex:
   command: claude --print --dangerously-skip-permissions --output-format stream-json --verbose --model claude-sonnet-4-6
   stall_timeout_ms: 3600000
