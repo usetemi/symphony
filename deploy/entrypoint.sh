@@ -14,11 +14,13 @@ set -euo pipefail
 
 echo "[symphony] Starting Symphony orchestrator..."
 
-# --- GitHub auth via token (rewrites SSH URLs to HTTPS) ---
+# --- GitHub auth via token (rewrites SSH and HTTPS URLs) ---
 if [ -n "${GITHUB_TOKEN:-}" ]; then
     echo "[symphony] Configuring GitHub token auth..."
+    # Rewrite SSH clone URLs to HTTPS with token
     git config --global url."https://x-access-token:${GITHUB_TOKEN}@github.com/".insteadOf "git@github.com:"
-    git config --global url."https://x-access-token:${GITHUB_TOKEN}@github.com/".insteadOf "https://github.com/"
+    # Also rewrite plain HTTPS URLs (use --add to keep both insteadOf entries)
+    git config --global --add url."https://x-access-token:${GITHUB_TOKEN}@github.com/".insteadOf "https://github.com/"
 fi
 
 # --- Git identity for commits made by the agent ---
