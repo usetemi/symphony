@@ -1,0 +1,5 @@
+.git
+elixir/_build
+elixir/deps
+elixir/node_modules
+elixir/.elixir_ls
