@@ -27,8 +27,8 @@ fi
 git config --global user.name "Symphony"
 git config --global user.email "symphony@usetemi.com"
 
-# --- Ensure workspace root exists ---
-mkdir -p /data/workspaces
+# --- Ensure volume directories exist ---
+mkdir -p /data/workspaces /data/claude-auth /data/logs
 
 # --- Configure Linear CLI auth ---
 if [ -n "${LINEAR_API_KEY:-}" ]; then
