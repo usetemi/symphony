@@ -31,6 +31,7 @@ agent:
   max_turns: 20
 codex:
   command: claude --print --dangerously-skip-permissions --output-format stream-json --verbose --model claude-sonnet-4-6
+  stall_timeout_ms: 3600000
 server:
   port: 4000
   host: "0.0.0.0"
