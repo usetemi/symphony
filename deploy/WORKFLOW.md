@@ -23,7 +23,7 @@ hooks:
     git clone --depth 1 git@github.com:usetemi/temi.git .
     cd apps/usetemi && npm install
   before_run: |
-    cd apps/usetemi && git fetch origin main && git checkout -B work origin/main
+    cd apps/usetemi && git fetch origin main
   after_run: |
     cd apps/usetemi && npm run verify
 agent:
