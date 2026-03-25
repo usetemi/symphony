@@ -1,10 +1,10 @@
 defmodule SymphonyElixir.AgentRunner do
   @moduledoc """
-  Executes a single Linear issue in its workspace with Codex.
+  Executes a single Linear issue in its workspace with a coding agent.
   """
 
   require Logger
-  alias SymphonyElixir.Codex.AppServer
+  alias SymphonyElixir.Claude.AppServer
   alias SymphonyElixir.{Config, Linear.Issue, PromptBuilder, Tracker, Workspace}
 
   @type worker_host :: String.t() | nil
@@ -92,21 +92,25 @@ defmodule SymphonyElixir.AgentRunner do
   defp do_run_codex_turns(app_session, workspace, issue, codex_update_recipient, opts, issue_state_fetcher, turn_number, max_turns) do
     prompt = build_turn_prompt(issue, opts, turn_number, max_turns)
 
-    with {:ok, turn_session} <-
+    with {:ok, turn_result} <-
            AppServer.run_turn(
              app_session,
              prompt,
              issue,
              on_message: codex_message_handler(codex_update_recipient, issue)
            ) do
-      Logger.info("Completed agent run for #{issue_context(issue)} session_id=#{turn_session[:session_id]} workspace=#{workspace} turn=#{turn_number}/#{max_turns}")
+      Logger.info("Completed agent run for #{issue_context(issue)} session_id=#{turn_result[:session_id]} workspace=#{workspace} turn=#{turn_number}/#{max_turns}")
+
+      # The Claude adapter returns an updated session with incremented turn_count.
+      # Use it for subsequent turns so --resume works correctly.
+      next_session = Map.get(turn_result, :session, app_session)
 
       case continue_with_issue?(issue, issue_state_fetcher) do
         {:continue, refreshed_issue} when turn_number < max_turns ->
           Logger.info("Continuing agent run for #{issue_context(refreshed_issue)} after normal turn completion turn=#{turn_number}/#{max_turns}")
 
           do_run_codex_turns(
-            app_session,
+            next_session,
             workspace,
             refreshed_issue,
             codex_update_recipient,
@@ -136,10 +140,10 @@ defmodule SymphonyElixir.AgentRunner do
     """
     Continuation guidance:
 
-    - The previous Codex turn completed normally, but the Linear issue is still in an active state.
+    - The previous turn completed normally, but the Linear issue is still in an active state.
     - This is continuation turn ##{turn_number} of #{max_turns} for the current agent run.
     - Resume from the current workspace and workpad state instead of restarting from scratch.
-    - The original task instructions and prior turn context are already present in this thread, so do not restate them before acting.
+    - The original task instructions and prior turn context are already present in this session, so do not restate them before acting.
     - Focus on the remaining ticket work and do not end the turn while the issue stays active unless you are truly blocked.
     """
   end

@@ -151,24 +151,21 @@ defmodule SymphonyElixir.Config.Schema do
   end
 
   defmodule Codex do
-    @moduledoc false
+    @moduledoc """
+    Agent command configuration. Named `codex` for WORKFLOW.md compatibility
+    with the Symphony SPEC, but works with any CLI agent (Claude Code, Codex, etc.).
+    """
     use Ecto.Schema
     import Ecto.Changeset
 
     @primary_key false
     embedded_schema do
-      field(:command, :string, default: "codex app-server")
-
-      field(:approval_policy, StringOrMap,
-        default: %{
-          "reject" => %{
-            "sandbox_approval" => true,
-            "rules" => true,
-            "mcp_elicitations" => true
-          }
-        }
+      field(:command, :string,
+        default: "claude --print --dangerously-skip-permissions --output-format stream-json"
       )
 
+      # Kept for WORKFLOW.md forward compatibility; unused by Claude adapter.
+      field(:approval_policy, StringOrMap, default: "never")
       field(:thread_sandbox, :string, default: "workspace-write")
       field(:turn_sandbox_policy, :map)
       field(:turn_timeout_ms, :integer, default: 3_600_000)
