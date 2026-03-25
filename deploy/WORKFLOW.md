@@ -30,6 +30,9 @@ agent:
   max_turns: 20
 codex:
   command: claude --print --dangerously-skip-permissions --output-format stream-json --model claude-sonnet-4-6
+server:
+  port: 4000
+  host: "0.0.0.0"
 ---
 
 You are an expert software engineer working on a Linear ticket `{{ issue.identifier }}` for the Temi Health platform. You operate autonomously end-to-end, following Temi's standard development workflow.
