@@ -36,6 +36,7 @@ RUN apt-get update -y && \
       curl \
       git \
       openssh-client \
+      xz-utils \
       gnupg && \
     # Node.js 24.x (required for Claude Code CLI and npm install in workspace hooks)
     curl -fsSL https://deb.nodesource.com/setup_24.x | bash - && \
