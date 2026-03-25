@@ -61,20 +61,17 @@ RUN chmod +x /usr/local/bin/entrypoint.sh
 RUN mkdir -p /data/workspaces /data/claude-auth /data/logs && \
     chown -R symphony:symphony /data
 
-# Switch to non-root user
+# Set up symphony user home (before volume mount can overwrite /data)
 USER symphony
 WORKDIR /home/symphony
-
-# Symlink Claude auth to persistent volume
-RUN ln -s /data/claude-auth /home/symphony/.claude
-
-# SSH known_hosts for GitHub (fallback if using SSH instead of token)
-RUN mkdir -p /home/symphony/.ssh && \
+RUN ln -s /data/claude-auth /home/symphony/.claude && \
+    mkdir -p /home/symphony/.ssh && \
     ssh-keyscan github.com >> /home/symphony/.ssh/known_hosts 2>/dev/null
 
-# Copy Temi WORKFLOW.md (workspace root adjusted for /data/workspaces)
+# Copy Temi WORKFLOW.md
 COPY --chown=symphony:symphony deploy/WORKFLOW.md /home/symphony/WORKFLOW.md
 
+# Entrypoint runs as root to fix volume ownership, then execs as symphony
+USER root
 EXPOSE 4000
-
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]

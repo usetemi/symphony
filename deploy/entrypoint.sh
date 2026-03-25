@@ -27,8 +27,9 @@ fi
 git config --global user.name "Symphony"
 git config --global user.email "symphony@usetemi.com"
 
-# --- Ensure volume directories exist ---
+# --- Ensure volume directories exist (owned by symphony) ---
 mkdir -p /data/workspaces /data/claude-auth /data/logs
+chown -R symphony:symphony /data
 
 # --- Configure Linear CLI auth ---
 if [ -n "${LINEAR_API_KEY:-}" ]; then
@@ -42,9 +43,9 @@ if [ ! -d /data/claude-auth ] || [ -z "$(ls -A /data/claude-auth 2>/dev/null)" ]
     echo "[symphony] Run 'fly ssh console' and then 'claude setup-token' to authenticate."
 fi
 
-# --- Launch Symphony ---
-exec /usr/local/bin/symphony \
+# --- Launch Symphony as symphony user ---
+exec su symphony -c '/usr/local/bin/symphony \
     --i-understand-that-this-will-be-running-without-the-usual-guardrails \
     --port 4000 \
     --logs-root /data/logs \
-    /home/symphony/WORKFLOW.md
+    /home/symphony/WORKFLOW.md'
