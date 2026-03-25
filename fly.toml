@@ -2,7 +2,7 @@
 # Polls Linear for issues, launches Claude Code per issue, delivers PRs.
 
 app = "usetemi-symphony"
-primary_region = "dfw"
+primary_region = "lax"
 
 [build]
   dockerfile = "Dockerfile"
