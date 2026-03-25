@@ -25,8 +25,8 @@ primary_region = "lax"
     soft_limit = 20
 
 [[vm]]
-  size = "shared-cpu-2x"
-  memory = "2gb"
+  size = "shared-cpu-1x"
+  memory = "1gb"
 
 [mounts]
   source = "symphony_data"
