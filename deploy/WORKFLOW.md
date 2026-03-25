@@ -18,6 +18,7 @@ polling:
 workspace:
   root: /data/workspaces
 hooks:
+  timeout_ms: 300000
   after_create: |
     git clone --depth 1 git@github.com:usetemi/temi.git .
     cd apps/usetemi && npm install
