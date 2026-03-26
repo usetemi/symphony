@@ -35,7 +35,7 @@ hooks:
     fi
   before_run: |
     export PATH="/usr/local/bin:/usr/bin:/bin:$PATH"
-    chmod -R 777 .
+    chown -R claude:claude .
     cd apps/usetemi && git fetch origin main
   after_run: |
     export PATH="/usr/local/bin:/usr/bin:/bin:$PATH"
