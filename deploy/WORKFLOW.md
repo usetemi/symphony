@@ -144,12 +144,14 @@ You MUST post proof before moving to Human Review. Do not skip this step.
 
 **Step 8b: Take and post screenshots (if UI change).** If the change affects anything visible in the browser:
 
-1. Start the dev server: `cd apps/usetemi && npm run dev &` and wait ~10 seconds
-2. Take a screenshot: `web http://localhost:3000/<affected-page> --screenshot /tmp/proof.png`
+1. Start the dev server: `cd apps/usetemi && npm run dev &` and wait ~15 seconds for it to compile
+2. Take a screenshot: `npx playwright screenshot --full-page http://localhost:3000/<affected-page> /tmp/proof.png`
 3. Upload to GitHub: `gh release create pr-assets-{{ issue.identifier | downcase }} --title "assets" --notes "" --draft 2>/dev/null; gh release upload pr-assets-{{ issue.identifier | downcase }} /tmp/proof.png --clobber`
 4. Get the URL: `SCREENSHOT_URL=$(gh release view pr-assets-{{ issue.identifier | downcase }} --json assets --jq '.assets[0].url')`
 5. Post to Linear: `linear issue comment {{ issue.identifier }} --body "## Screenshot\n\n![proof]($SCREENSHOT_URL)"`
 6. Clean up: `kill %1 2>/dev/null`
+
+Take multiple screenshots if needed. Use `--viewport-size 1280,720` for consistent sizing.
 
 ### 9. Move to Human Review
 
@@ -161,7 +163,7 @@ linear issue update {{ issue.identifier }} --state "Human Review"
 
 - `linear` CLI for Linear operations (already authenticated)
 - `gh` CLI for GitHub operations (already authenticated)
-- `web` CLI for page screenshots (`web <url> --screenshot <path>`)
+- `npx playwright screenshot` for page screenshots (`npx playwright screenshot --full-page <url> <path>`)
 - Standard Claude Code tools (Read, Edit, Write, Bash, Glob, Grep)
 
 ## Rules
