@@ -219,8 +219,8 @@ defmodule SymphonyElixir.Claude.AppServer do
     case Jason.decode(payload_string) do
       {:ok, %{"type" => "result"} = payload} ->
         # Result event is the final event in stream-json mode.
-        # Extract usage info and emit as turn_completed.
         result_metadata = maybe_set_usage(metadata, payload)
+        log_result_event(payload)
 
         emit_message(
           on_message,
@@ -233,6 +233,8 @@ defmodule SymphonyElixir.Claude.AppServer do
         receive_loop(port, on_message, timeout_ms, "", result_metadata)
 
       {:ok, %{"type" => "assistant", "message" => message} = payload} ->
+        Logger.info("Claude: assistant message (#{truncate_message(message)})")
+
         emit_message(
           on_message,
           :notification,
@@ -242,7 +244,21 @@ defmodule SymphonyElixir.Claude.AppServer do
 
         receive_loop(port, on_message, timeout_ms, "", metadata)
 
+      {:ok, %{"type" => "tool_use", "tool" => %{"name" => tool_name}} = payload} ->
+        Logger.info("Claude: tool_use #{tool_name}")
+
+        emit_message(
+          on_message,
+          :notification,
+          %{payload: payload, raw: truncate(payload_string)},
+          maybe_set_usage(metadata, payload)
+        )
+
+        receive_loop(port, on_message, timeout_ms, "", metadata)
+
       {:ok, %{"type" => "tool_use"} = payload} ->
+        Logger.info("Claude: tool_use")
+
         emit_message(
           on_message,
           :notification,
@@ -263,6 +279,8 @@ defmodule SymphonyElixir.Claude.AppServer do
         receive_loop(port, on_message, timeout_ms, "", metadata)
 
       {:ok, %{"type" => "error"} = payload} ->
+        Logger.warning("Claude: error event: #{truncate(payload_string)}")
+
         emit_message(
           on_message,
           :turn_failed,
@@ -273,8 +291,7 @@ defmodule SymphonyElixir.Claude.AppServer do
         {:error, {:turn_failed, payload}}
 
       {:ok, %{"type" => type} = payload} ->
-        # Other stream-json event types (system, progress, etc.)
-        Logger.debug("Claude stream event type=#{type}")
+        Logger.debug("Claude: event type=#{type}")
 
         emit_message(
           on_message,
@@ -449,6 +466,21 @@ defmodule SymphonyElixir.Claude.AppServer do
 
   defp shell_escape(value) when is_binary(value) do
     "'" <> String.replace(value, "'", "'\"'\"'") <> "'"
+  end
+
+  defp log_result_event(payload) do
+    usage = Map.get(payload, "usage", %{})
+    input = Map.get(usage, "input_tokens", 0)
+    output = Map.get(usage, "output_tokens", 0)
+    cost = Map.get(payload, "cost_usd")
+    duration = Map.get(payload, "duration_ms")
+
+    cost_str = if is_number(cost), do: " cost=$#{Float.round(cost / 1, 4)}", else: ""
+    duration_str = if is_integer(duration), do: " duration=#{div(duration, 1000)}s", else: ""
+
+    Logger.info(
+      "Claude: result in=#{input} out=#{output} total=#{input + output}#{cost_str}#{duration_str}"
+    )
   end
 
   defp default_on_message(_message), do: :ok

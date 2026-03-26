@@ -40,7 +40,8 @@ defmodule SymphonyElixir.LogFile do
            disk_log_handler_config(expanded_path, max_bytes, max_files)
          ) do
       :ok ->
-        remove_default_console_handler()
+        # Keep the default console handler alive so fly logs shows real events.
+        # The disk log captures everything; console output goes to stdout for fly logs.
         :ok
 
       {:error, reason} ->
