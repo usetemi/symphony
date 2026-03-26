@@ -146,10 +146,25 @@ You MUST post proof before moving to Human Review. Do not skip this step.
 
 1. Start the dev server: `cd apps/usetemi && npm run dev &` and wait ~15 seconds for it to compile
 2. Take a screenshot: `npx playwright screenshot --full-page http://localhost:3000/<affected-page> /tmp/proof.png`
-3. Upload to GitHub: `gh release create pr-assets-{{ issue.identifier | downcase }} --title "assets" --notes "" --draft 2>/dev/null; gh release upload pr-assets-{{ issue.identifier | downcase }} /tmp/proof.png --clobber`
-4. Get the URL: `SCREENSHOT_URL=$(gh release view pr-assets-{{ issue.identifier | downcase }} --json assets --jq '.assets[0].url')`
-5. Post to Linear: `linear issue comment {{ issue.identifier }} --body "## Screenshot\n\n![proof]($SCREENSHOT_URL)"`
-6. Clean up: `kill %1 2>/dev/null`
+3. Upload to Linear using their file upload API:
+
+```bash
+SIZE=$(stat -c%s /tmp/proof.png)
+UPLOAD_RESPONSE=$(curl -s -X POST https://api.linear.app/graphql \
+  -H "Content-Type: application/json" \
+  -H "Authorization: $LINEAR_API_KEY" \
+  -d "{\"query\": \"mutation { fileUpload(size: $SIZE, contentType: \\\"image/png\\\", filename: \\\"proof.png\\\", makePublic: true) { success uploadFile { uploadUrl assetUrl headers { key value } } } }\"}")
+UPLOAD_URL=$(echo "$UPLOAD_RESPONSE" | python3 -c "import sys,json; print(json.load(sys.stdin)['data']['fileUpload']['uploadFile']['uploadUrl'])")
+ASSET_URL=$(echo "$UPLOAD_RESPONSE" | python3 -c "import sys,json; print(json.load(sys.stdin)['data']['fileUpload']['uploadFile']['assetUrl'])")
+curl -s -X PUT \
+  -H "Content-Type: image/png" \
+  -H "x-goog-content-length-range: $SIZE,$SIZE" \
+  -H "Content-Disposition: attachment; filename=\"proof.png\"" \
+  --data-binary @/tmp/proof.png "$UPLOAD_URL"
+```
+
+4. Post to Linear: `linear issue comment add {{ issue.identifier }} "## Screenshot\n\n![proof]($ASSET_URL)"`
+5. Clean up: `kill %1 2>/dev/null`
 
 Take multiple screenshots if needed. Use `--viewport-size 1280,720` for consistent sizing.
 
