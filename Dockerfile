@@ -54,6 +54,13 @@ RUN curl -fsSL https://raw.githubusercontent.com/chrismccord/web/main/web-linux-
       -o /usr/local/bin/web && \
     chmod +x /usr/local/bin/web
 
+# Create a non-root user for Claude Code (which refuses --dangerously-skip-permissions as root)
+# Symphony orchestrator and hooks run as root; only the claude CLI runs as this user.
+RUN useradd -m -s /bin/bash claude && \
+    ln -s /data/claude-auth /home/claude/.claude && \
+    mkdir -p /home/claude/.ssh && \
+    ssh-keyscan github.com >> /home/claude/.ssh/known_hosts 2>/dev/null
+
 # Copy escript binary
 COPY --from=build /app/bin/symphony /usr/local/bin/symphony
 RUN chmod +x /usr/local/bin/symphony

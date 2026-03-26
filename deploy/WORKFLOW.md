@@ -40,7 +40,7 @@ agent:
   max_concurrent_agents: 3
   max_turns: 1
 codex:
-  command: claude --print --dangerously-skip-permissions --output-format stream-json --verbose --model claude-opus-4-6
+  command: su claude -c 'claude --print --dangerously-skip-permissions --output-format stream-json --verbose --model claude-opus-4-6'
   stall_timeout_ms: 3600000
 server:
   port: 4000

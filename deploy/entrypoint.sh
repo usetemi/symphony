@@ -28,6 +28,12 @@ git config --global --add safe.directory '*'
 # --- Ensure volume directories exist ---
 mkdir -p /data/workspaces /data/claude-auth /data/logs
 
+# --- Configure git and permissions for claude user (non-root for Claude Code CLI) ---
+cp /root/.gitconfig /home/claude/.gitconfig
+chown claude:claude /home/claude/.gitconfig
+chown -R claude:claude /data/claude-auth
+chmod -R 777 /data/workspaces
+
 # --- Configure Linear CLI auth ---
 if [ -n "${LINEAR_API_KEY:-}" ]; then
     echo "[symphony] Configuring Linear CLI auth..."
