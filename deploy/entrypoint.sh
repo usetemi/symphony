@@ -20,9 +20,10 @@ if [ -n "${GITHUB_TOKEN:-}" ]; then
     git config --global --add url."https://x-access-token:${GITHUB_TOKEN}@github.com/".insteadOf "https://github.com/"
 fi
 
-# --- Git identity for commits ---
+# --- Git identity and safe directory ---
 git config --global user.name "Symphony"
 git config --global user.email "symphony@usetemi.com"
+git config --global --add safe.directory '*'
 
 # --- Ensure volume directories exist ---
 mkdir -p /data/workspaces /data/claude-auth /data/logs
