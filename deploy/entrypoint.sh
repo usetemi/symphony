@@ -15,11 +15,11 @@ set -euo pipefail
 echo "[symphony] Starting Symphony orchestrator..."
 
 # --- GitHub auth via token (rewrites SSH and HTTPS URLs) ---
+# Write git config to symphony user's home (not root's) so hooks and agents see it.
+export HOME=/home/symphony
 if [ -n "${GITHUB_TOKEN:-}" ]; then
     echo "[symphony] Configuring GitHub token auth..."
-    # Rewrite SSH clone URLs to HTTPS with token
     git config --global url."https://x-access-token:${GITHUB_TOKEN}@github.com/".insteadOf "git@github.com:"
-    # Also rewrite plain HTTPS URLs (use --add to keep both insteadOf entries)
     git config --global --add url."https://x-access-token:${GITHUB_TOKEN}@github.com/".insteadOf "https://github.com/"
 fi
 
@@ -27,14 +27,17 @@ fi
 git config --global user.name "Symphony"
 git config --global user.email "symphony@usetemi.com"
 
+# Reset HOME for remaining root operations
+export HOME=/root
+
 # --- Ensure volume directories exist (owned by symphony) ---
 mkdir -p /data/workspaces /data/claude-auth /data/logs
 chown -R symphony:symphony /data
 
-# --- Configure Linear CLI auth ---
+# --- Configure Linear CLI auth (as symphony user so config lands in the right home) ---
 if [ -n "${LINEAR_API_KEY:-}" ]; then
     echo "[symphony] Configuring Linear CLI auth..."
-    linear auth login --key "${LINEAR_API_KEY}" --plaintext 2>/dev/null || true
+    su symphony -c "linear auth login --key '${LINEAR_API_KEY}' --plaintext" 2>/dev/null || true
 fi
 
 # --- Claude auth check ---
