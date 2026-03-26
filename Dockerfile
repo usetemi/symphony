@@ -68,8 +68,9 @@ RUN ln -s /data/claude-auth /home/symphony/.claude && \
     mkdir -p /home/symphony/.ssh && \
     ssh-keyscan github.com >> /home/symphony/.ssh/known_hosts 2>/dev/null
 
-# Copy Temi WORKFLOW.md
+# Copy Temi WORKFLOW.md and template preparation script
 COPY --chown=symphony:symphony deploy/WORKFLOW.md /home/symphony/WORKFLOW.md
+COPY --chown=symphony:symphony deploy/prepare-template.sh /home/symphony/prepare-template.sh
 
 # Entrypoint runs as root to fix volume ownership, then execs as symphony
 USER root

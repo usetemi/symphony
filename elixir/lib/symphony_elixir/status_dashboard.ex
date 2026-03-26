@@ -607,7 +607,8 @@ defmodule SymphonyElixir.StatusDashboard do
         :none -> @ansi_red
         "codex/event/token_count" -> @ansi_yellow
         "codex/event/task_started" -> @ansi_green
-        "turn_completed" -> @ansi_magenta
+        e when e in ["turn_completed", :turn_completed] -> @ansi_magenta
+        e when e in ["session_started", :session_started] -> @ansi_green
         _ -> @ansi_blue
       end
 

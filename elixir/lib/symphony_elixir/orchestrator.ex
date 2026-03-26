@@ -1440,7 +1440,10 @@ defmodule SymphonyElixir.Orchestrator do
       [:tokenUsage, :total]
     ]
 
-    explicit_map_at_paths(payload, absolute_paths)
+    # Try nested paths first (Codex format), then check if the payload itself
+    # is a flat token usage map (Claude Code stream-json format).
+    explicit_map_at_paths(payload, absolute_paths) ||
+      if(integer_token_map?(payload), do: payload)
   end
 
   defp absolute_token_usage_from_payload(_payload), do: nil

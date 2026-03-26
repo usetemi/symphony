@@ -43,6 +43,10 @@ if [ ! -d /data/claude-auth ] || [ -z "$(ls -A /data/claude-auth 2>/dev/null)" ]
     echo "[symphony] Run 'fly ssh console' and then 'claude setup-token' to authenticate."
 fi
 
+# --- Prepare template workspace in background (as symphony user) ---
+echo "[symphony] Preparing template workspace in background..."
+su symphony -c 'bash /home/symphony/prepare-template.sh' &
+
 # --- Launch Symphony as symphony user ---
 exec su symphony -c '/usr/local/bin/symphony \
     --i-understand-that-this-will-be-running-without-the-usual-guardrails \

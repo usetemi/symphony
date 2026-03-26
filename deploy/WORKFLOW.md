@@ -20,11 +20,21 @@ workspace:
 hooks:
   timeout_ms: 600000
   after_create: |
-    git clone --depth 1 git@github.com:usetemi/temi.git .
-    cd apps/usetemi && npm install
+    export PATH="/usr/local/bin:/usr/bin:/bin:$PATH"
+    if [ -d /data/template-workspace/.git ]; then
+      cp -a /data/template-workspace/. .
+      git fetch origin main --depth 1
+      git reset --hard origin/main
+      cd apps/usetemi && npm install --prefer-offline
+    else
+      git clone --depth 1 git@github.com:usetemi/temi.git .
+      cd apps/usetemi && npm install
+    fi
   before_run: |
+    export PATH="/usr/local/bin:/usr/bin:/bin:$PATH"
     cd apps/usetemi && git fetch origin main
   after_run: |
+    export PATH="/usr/local/bin:/usr/bin:/bin:$PATH"
     cd apps/usetemi && npm run verify
 agent:
   max_concurrent_agents: 3
