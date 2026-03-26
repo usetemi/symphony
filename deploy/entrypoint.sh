@@ -47,9 +47,9 @@ if [ ! -d /data/claude-auth ] || [ -z "$(ls -A /data/claude-auth 2>/dev/null)" ]
     echo "[symphony] Run 'fly ssh console' and then 'claude setup-token' to authenticate."
 fi
 
-# --- Prepare template workspace in background ---
-echo "[symphony] Preparing template workspace in background..."
-bash /root/prepare-template.sh &
+# --- Template workspace preparation is deferred ---
+# Skipped at startup to avoid OOM (npm install competes with workspace setup).
+# The template is populated by the after_create hook on the first successful run.
 
 # --- Launch Symphony ---
 exec /usr/local/bin/symphony \

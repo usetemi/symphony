@@ -29,6 +29,9 @@ hooks:
     else
       git clone --depth 1 git@github.com:usetemi/temi.git .
       cd apps/usetemi && npm install
+      # Cache this workspace as template for future runs
+      rm -rf /data/template-workspace
+      cp -a "$(cd ../.. && pwd)" /data/template-workspace
     fi
   before_run: |
     export PATH="/usr/local/bin:/usr/bin:/bin:$PATH"
