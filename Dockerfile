@@ -25,8 +25,7 @@ COPY elixir/ ./
 RUN mix escript.build
 
 # =============================================================================
-# Stage 2: Runtime image
-# Uses the same Elixir base (includes Erlang) + adds Node.js and Claude Code
+# Stage 2: Runtime image (runs as root — no user switching)
 # =============================================================================
 FROM ${ELIXIR_IMAGE} AS runtime
 
@@ -38,7 +37,7 @@ RUN apt-get update -y && \
       openssh-client \
       xz-utils \
       gnupg && \
-    # Node.js 24.x (required for Claude Code CLI and npm install in workspace hooks)
+    # Node.js 24.x
     curl -fsSL https://deb.nodesource.com/setup_24.x | bash - && \
     apt-get install -y --no-install-recommends nodejs && \
     rm -rf /var/lib/apt/lists/*
@@ -50,13 +49,10 @@ RUN npm install -g @anthropic-ai/claude-code @kyaukyuai/linear-cli
 RUN npx playwright install-deps chromium && \
     npx playwright install chromium
 
-# Install `web` CLI tool (Go binary from chrismccord/web) for page screenshots
+# Install `web` CLI tool (Go binary) for page screenshots
 RUN curl -fsSL https://raw.githubusercontent.com/chrismccord/web/main/web-linux-amd64 \
       -o /usr/local/bin/web && \
     chmod +x /usr/local/bin/web
-
-# Create non-root user
-RUN useradd -m -s /bin/bash symphony
 
 # Copy escript binary
 COPY --from=build /app/bin/symphony /usr/local/bin/symphony
@@ -66,22 +62,17 @@ RUN chmod +x /usr/local/bin/symphony
 COPY deploy/entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh
 
-# Create volume mount points
+# Create volume mount points and set up home
 RUN mkdir -p /data/workspaces /data/claude-auth /data/logs && \
-    chown -R symphony:symphony /data
+    ln -s /data/claude-auth /root/.claude && \
+    mkdir -p /root/.ssh && \
+    ssh-keyscan github.com >> /root/.ssh/known_hosts 2>/dev/null
 
-# Set up symphony user home (before volume mount can overwrite /data)
-USER symphony
-WORKDIR /home/symphony
-RUN ln -s /data/claude-auth /home/symphony/.claude && \
-    mkdir -p /home/symphony/.ssh && \
-    ssh-keyscan github.com >> /home/symphony/.ssh/known_hosts 2>/dev/null
+# Copy workflow and scripts
+COPY deploy/WORKFLOW.md /root/WORKFLOW.md
+COPY deploy/prepare-template.sh /root/prepare-template.sh
+RUN chmod +x /root/prepare-template.sh
 
-# Copy Temi WORKFLOW.md and template preparation script
-COPY --chown=symphony:symphony deploy/WORKFLOW.md /home/symphony/WORKFLOW.md
-COPY --chown=symphony:symphony deploy/prepare-template.sh /home/symphony/prepare-template.sh
-
-# Entrypoint runs as root to fix volume ownership, then execs as symphony
-USER root
+WORKDIR /root
 EXPOSE 4000
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]

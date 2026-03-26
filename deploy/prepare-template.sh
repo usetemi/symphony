@@ -8,7 +8,7 @@ set -euo pipefail
 # so that after_create hooks can copy from here instead of cloning + installing
 # from scratch (~5 min → ~30 sec).
 #
-# Run as the symphony user (called from entrypoint after chown).
+# Called from entrypoint in background.
 # =============================================================================
 
 TEMPLATE_DIR="/data/template-workspace"
