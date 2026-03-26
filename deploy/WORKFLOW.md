@@ -133,64 +133,20 @@ Skip this step if reworking an existing PR.
 gh pr create --title "description of change" --body "Closes {{ issue.identifier }}"
 ```
 
-### 8. Post proof to Linear
+### 8. Post proof to Linear (REQUIRED)
 
-Post evidence that the change works to the Linear issue so reviewers can verify without pulling the branch.
+You MUST post proof before moving to Human Review. Do not skip this step.
 
-#### 8a. Test results
+**Step 8a: Post verify results.** Run `npm run verify` in `apps/usetemi`, capture the output, and post it as a comment on the Linear issue using `linear issue comment {{ issue.identifier }}`. Include typecheck and test results.
 
-Capture test output and post a summary:
+**Step 8b: Take and post screenshots (if UI change).** If the change affects anything visible in the browser:
 
-```bash
-cd apps/usetemi
-TEST_OUTPUT=$(npm test 2>&1 | tail -30)
-TYPECHECK_OUTPUT=$(npm run typecheck 2>&1 | tail -5)
-
-linear issue comment {{ issue.identifier }} --body "## Verification
-
-### Typecheck
-\`\`\`
-$TYPECHECK_OUTPUT
-\`\`\`
-
-### Tests
-\`\`\`
-$TEST_OUTPUT
-\`\`\`
-"
-```
-
-#### 8b. Screenshots (if UI change)
-
-If the change affects UI, start the dev server, take screenshots, and post them:
-
-```bash
-cd apps/usetemi
-
-# Start dev server in background
-npm run dev &
-DEV_PID=$!
-sleep 10
-
-# Take screenshots of affected pages
-web http://localhost:3000/<affected-page> --screenshot /tmp/proof-1.png
-
-# Upload to GitHub draft release for hosting
-PR_NUMBER=$(gh pr list --search "{{ issue.identifier }}" --json number --jq '.[0].number')
-gh release create pr-${PR_NUMBER}-assets --title "PR #${PR_NUMBER} assets" --notes "" --draft 2>/dev/null || true
-gh release upload pr-${PR_NUMBER}-assets /tmp/proof-1.png --clobber
-SCREENSHOT_URL=$(gh release view pr-${PR_NUMBER}-assets --json assets --jq '.assets[0].url')
-
-# Post screenshot to Linear
-linear issue comment {{ issue.identifier }} --body "## Screenshot
-
-![proof]($SCREENSHOT_URL)"
-
-# Clean up
-kill $DEV_PID 2>/dev/null
-```
-
-Adapt the URLs and number of screenshots to the specific change. Take before/after screenshots when helpful.
+1. Start the dev server: `cd apps/usetemi && npm run dev &` and wait ~10 seconds
+2. Take a screenshot: `web http://localhost:3000/<affected-page> --screenshot /tmp/proof.png`
+3. Upload to GitHub: `gh release create pr-assets-{{ issue.identifier | downcase }} --title "assets" --notes "" --draft 2>/dev/null; gh release upload pr-assets-{{ issue.identifier | downcase }} /tmp/proof.png --clobber`
+4. Get the URL: `SCREENSHOT_URL=$(gh release view pr-assets-{{ issue.identifier | downcase }} --json assets --jq '.assets[0].url')`
+5. Post to Linear: `linear issue comment {{ issue.identifier }} --body "## Screenshot\n\n![proof]($SCREENSHOT_URL)"`
+6. Clean up: `kill %1 2>/dev/null`
 
 ### 9. Move to Human Review
 
@@ -212,4 +168,5 @@ linear issue update {{ issue.identifier }} --state "Human Review"
 - If blocked, move to Human Review with a note explaining the blocker
 - If the issue state is `Done`, `Backlog`, or `Human Review`, do nothing
 - On Rework, always read feedback first and push to the existing branch
-- Always post verification results to Linear before moving to Human Review
+- NEVER move to Human Review without posting proof to Linear first (step 8)
+- If screenshots fail, still post test/verify results as proof
