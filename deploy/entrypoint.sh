@@ -24,6 +24,7 @@ fi
 git config --global user.name "Symphony"
 git config --global user.email "symphony@usetemi.com"
 git config --global --add safe.directory '*'
+git config --global core.fileMode false
 
 # --- Ensure volume directories exist ---
 mkdir -p /data/workspaces /data/claude-auth /data/logs
