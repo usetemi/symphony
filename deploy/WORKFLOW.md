@@ -65,7 +65,25 @@ URL: {{ issue.url }}
 
 ## Pipeline
 
-Follow these steps in order.
+**If the issue state is `Merging`**, skip the entire implementation pipeline and go directly to the Merge step below.
+
+### Merge (Merging state only)
+
+The human has approved this issue. Squash-merge the PR and clean up:
+
+```bash
+PR_NUMBER=$(gh pr list --search "{{ issue.identifier }}" --json number --jq '.[0].number')
+gh pr merge $PR_NUMBER --squash --delete-branch
+linear issue update {{ issue.identifier }} --state "Done"
+```
+
+If the merge fails (e.g., CI checks pending, merge conflicts), post a comment to Linear explaining the blocker and move back to Human Review.
+
+After merging, stop. Do not continue to the implementation steps.
+
+---
+
+Follow these steps in order for **Todo** and **Rework** states.
 
 ### 1. Move to In Progress
 
@@ -187,6 +205,7 @@ linear issue update {{ issue.identifier }} --state "Human Review"
 - Do not ask for human input -- this is unattended
 - If blocked, move to Human Review with a note explaining the blocker
 - If the issue state is `Done`, `Backlog`, or `Human Review`, do nothing
+- If the issue state is `Merging`, squash-merge the PR and move to Done (skip implementation)
 - On Rework, always read feedback first and push to the existing branch
 - NEVER move to Human Review without posting proof to Linear first (step 8)
 - If screenshots fail, still post test/verify results as proof
