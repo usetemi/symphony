@@ -46,6 +46,15 @@ RUN apt-get update -y && \
 # Install Claude Code CLI and Linear CLI globally
 RUN npm install -g @anthropic-ai/claude-code @kyaukyuai/linear-cli
 
+# Install Playwright and Chromium for screenshot capture
+RUN npx playwright install-deps chromium && \
+    npx playwright install chromium
+
+# Install `web` CLI tool (Go binary from chrismccord/web) for page screenshots
+RUN curl -fsSL https://raw.githubusercontent.com/chrismccord/web/main/web-linux-amd64 \
+      -o /usr/local/bin/web && \
+    chmod +x /usr/local/bin/web
+
 # Create non-root user
 RUN useradd -m -s /bin/bash symphony
 
